@@ -65,6 +65,11 @@ function toHttpError(error: unknown) {
   }
   if (error instanceof Anthropic.APIError) {
     console.error('[claude]', error.status, error.message)
+    // Erreur de notre côté (crédits épuisés, requête refusée…) : on relaie la raison donnée par l'API.
+    const reason = apiErrorReason(error)
+    if (error.status && error.status < 500 && reason) {
+      return createError({ statusCode: 502, message: `L'API Anthropic a refusé la demande : ${reason}` })
+    }
     return createError({ statusCode: 502, message: `Claude est indisponible pour le moment (erreur ${error.status ?? 'réseau'}).` })
   }
   if (error instanceof Anthropic.AnthropicError) {
@@ -75,4 +80,10 @@ function toHttpError(error: unknown) {
   // Typiquement : aucune clé API configurée (le SDK lève alors une Error simple).
   console.error('[claude]', error)
   return createError({ statusCode: 500, message: 'Impossible d\'appeler Claude. Vérifie que la variable ANTHROPIC_API_KEY est bien configurée sur le serveur.' })
+}
+
+/** Message d'erreur renvoyé par l'API, par ex. « Your credit balance is too low… ». */
+function apiErrorReason(error: InstanceType<typeof Anthropic.APIError>): string | undefined {
+  const body = error.error as { error?: { message?: unknown } } | undefined
+  return typeof body?.error?.message === 'string' ? body.error.message : undefined
 }
