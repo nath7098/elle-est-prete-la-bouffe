@@ -2,8 +2,11 @@
 
 Une appli web de planification de repas inspirée de [Planivore](https://www.planivore.eu/) : Claude compose tes menus de la semaine selon ton foyer, tes goûts, ton matériel et ton budget, écrit les recettes, puis prépare **la liste de courses Lidl**, rangée dans l'ordre des rayons et avec les prix estimés.
 
+Tous les plats sont pensés pour un **rééquilibrage alimentaire**.
+
 ## Fonctionnalités
 
+- **Rééquilibrage alimentaire, toujours** : chaque plat suit l'assiette équilibrée (moitié légumes, quart protéines maigres, quart féculents en portion modérée, de préférence complets), avec peu de matières grasses, des cuissons douces, ni friture ni plats industriels. Les envies de plats riches (gratin, carbonara…) donnent des versions allégées. Chaque carte montre la composition de l'assiette, chaque recette une estimation des calories par portion. Les règles sont dans `server/utils/prompts.ts` (`BALANCED_DIET_RULES`).
 - **Réglages du foyer** : adultes et enfants, jours et repas à prévoir (déjeuner, dîner), budget de la semaine, régime (omnivore → vegan), contraintes (sans porc, sans gluten…), allergies, envies, équipement (four, airfryer, Monsieur Cuisine…), temps max, niveau, et ce que tu as déjà dans tes placards.
 - **Menu de la semaine** : un plat par créneau, avec coût estimé, temps et étiquettes. La jauge de budget montre où tu en es.
 - **Changer un plat** en un clic, avec une envie en option (« plus rapide », « moins cher », « sans four »…), ou le retirer.

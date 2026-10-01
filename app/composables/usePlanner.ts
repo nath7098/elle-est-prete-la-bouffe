@@ -53,8 +53,8 @@ function toPlanned(idea: MealIdea): PlannedMeal {
 }
 
 function toIdea(meal: PlannedMeal): MealIdea {
-  const { day, mealType, title, description, keyIngredients, totalMinutes, estimatedCost, tags } = meal
-  return { day, mealType, title, description, keyIngredients, totalMinutes, estimatedCost, tags }
+  const { day, mealType, title, description, plate, keyIngredients, totalMinutes, estimatedCost, tags } = meal
+  return { day, mealType, title, description, plate, keyIngredients, totalMinutes, estimatedCost, tags }
 }
 
 function signatureOf(plan: WeekPlan | null): string {

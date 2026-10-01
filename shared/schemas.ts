@@ -27,17 +27,30 @@ export type Preferences = z.infer<typeof PreferencesSchema>
 // le schéma sert à la fois de format imposé au modèle et de validation.
 // ---------------------------------------------------------------------------
 
+/** Composition de l'assiette, imposée par le rééquilibrage alimentaire. */
+export const PlateSchema = z.object({
+  vegetables: z.string(),
+  protein: z.string(),
+  starch: z.string(),
+})
+export type Plate = z.infer<typeof PlateSchema>
+
 export const MealIdeaSchema = z.object({
   day: z.enum(DAYS),
   mealType: z.enum(MEAL_TYPES),
   title: z.string(),
   description: z.string(),
+  plate: PlateSchema,
   keyIngredients: z.array(z.string()),
   totalMinutes: z.number(),
   estimatedCost: z.number(),
   tags: z.array(z.string()),
 })
 export type MealIdea = z.infer<typeof MealIdeaSchema>
+
+// Les menus enregistrés avant l'ajout de « plate » n'ont pas ce champ.
+export const RecipeMealSchema = MealIdeaSchema.partial({ plate: true })
+export type RecipeMeal = z.infer<typeof RecipeMealSchema>
 
 export const PlanOutputSchema = z.object({
   summary: z.string(),
@@ -56,6 +69,7 @@ export type Ingredient = z.infer<typeof IngredientSchema>
 
 export const RecipeSchema = z.object({
   servings: z.number(),
+  kcalPerServing: z.number(),
   prepMinutes: z.number(),
   cookMinutes: z.number(),
   equipment: z.array(z.string()),
@@ -111,7 +125,7 @@ export const SwapMealRequestSchema = z.object({
 
 export const RecipeRequestSchema = z.object({
   preferences: PreferencesSchema,
-  meal: MealIdeaSchema,
+  meal: RecipeMealSchema,
 })
 
 export const ShoppingListRequestSchema = z.object({

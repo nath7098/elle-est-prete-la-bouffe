@@ -27,7 +27,7 @@ function compose() {
           Ma semaine
         </h1>
         <p class="mt-1 max-w-2xl text-muted">
-          {{ plan?.summary || 'Claude compose tes repas selon tes goûts, ton matériel et ton budget, puis prépare ta liste de courses Lidl.' }}
+          {{ plan?.summary || 'Claude compose des repas équilibrés, adaptés à un rééquilibrage alimentaire, selon tes goûts, ton matériel et ton budget, puis prépare ta liste de courses Lidl.' }}
         </p>
       </div>
       <div v-if="plan || preferencesSaved" class="flex shrink-0 gap-2">

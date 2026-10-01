@@ -1,11 +1,24 @@
 import { AISLES, DAY_LABELS, DIET_LABELS, LEVEL_LABELS, MEAL_TYPE_LABELS, type Day, type MealType } from '#shared/constants'
 import { formatQuantity } from '#shared/ingredients'
-import type { IngredientNeed, MealIdea, Preferences } from '#shared/schemas'
+import type { IngredientNeed, Preferences, RecipeMeal } from '#shared/schemas'
 
 export const SYSTEM_PROMPT = `Tu es le chef et planificateur de repas de l'application « Elle est prête la bouffe ? ».
-Tu aides un foyer français à manger bien, varié et pas cher, en faisant toutes ses courses chez Lidl France.
+Tu aides un foyer français engagé dans un rééquilibrage alimentaire à manger sainement, varié et pas cher, en faisant toutes ses courses chez Lidl France.
+Tous les plats que tu proposes sont compatibles avec ce rééquilibrage : c'est la règle prioritaire, avant les envies et le budget.
 Tes estimations de prix s'appuient sur les prix habituels pratiqués par Lidl en France métropolitaine.
 Tu réponds toujours en français, dans le format JSON demandé.`
+
+/** Règles nutritionnelles communes à tous les plats proposés. */
+export const BALANCED_DIET_RULES = `## Rééquilibrage alimentaire (règle prioritaire)
+Chaque plat doit être compatible avec un rééquilibrage alimentaire :
+- Assiette équilibrée : environ la moitié de légumes, un quart de protéines maigres, un quart de féculents.
+- Protéines maigres : volaille sans peau, poisson, œufs, légumineuses, tofu, jambon blanc dégraissé. Viande rouge maigre (steak haché 5 % de matières grasses, rumsteck…) au plus deux fois par semaine. Pas de charcuterie grasse (lardons, saucisses, chorizo, merguez).
+- Féculents en portion modérée (50 à 70 g crus par adulte), de préférence complets ou à index glycémique bas : riz complet, pâtes complètes, quinoa, boulgour, patate douce, pommes de terre, lentilles, pois chiches, pain complet.
+- Peu de matières grasses : environ une cuillère à café d'huile (olive ou colza) par personne. Pas de beurre pour cuire, pas de crème fraîche entière : crème légère, fromage blanc ou yaourt nature à la place. Fromage en petite quantité (30 g maximum par personne).
+- Cuissons douces : vapeur, four, papillote, mijoté, poêle antiadhésive, airfryer. Jamais de friture, de panure frite, de pâte feuilletée ou brisée.
+- Pas de plats industriels ni de sauces toutes prêtes, pas de sucre ajouté. Peu de sel : on relève avec des herbes, des épices, de l'ail ou du citron.
+- Si l'utilisateur demande un plat riche (gratin, carbonara, burger, raclette…), propose-en une version allégée qui respecte ces règles.
+- Les contraintes alimentaires de l'utilisateur (régime, exclusions, allergies) s'appliquent en plus de ces règles.`
 
 const MONTHS = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre']
 
@@ -47,13 +60,14 @@ export function planSlots(preferences: Preferences): { day: Day, mealType: MealT
 }
 
 const MEAL_IDEA_RULES = `- day et mealType reprennent exactement les valeurs du créneau (ex. day « lundi », mealType « diner »).
-- Respecte strictement le régime, les contraintes alimentaires et les allergies.
+- Respecte strictement le rééquilibrage alimentaire, le régime, les contraintes alimentaires et les allergies.
+- plate : la composition de l'assiette. vegetables : les légumes, qui forment au moins la moitié de l'assiette ; protein : la source de protéines maigres ; starch : le féculent, en portion modérée.
 - Chaque plat doit être faisable avec l'équipement disponible, dans le temps maximum et au niveau indiqué.
 - Des plats familiaux et réalistes, avec des produits qu'on trouve toute l'année chez Lidl ou de saison.
 - totalMinutes : temps total préparation + cuisson, en minutes.
 - estimatedCost : coût en euros des ingrédients utilisés par le plat pour tout le foyer, aux prix Lidl France.
 - keyIngredients : les 3 à 6 ingrédients principaux.
-- tags : 1 à 3 étiquettes courtes (ex. « rapide », « végé », « four », « enfants », « comfort food »).`
+- tags : 1 à 3 étiquettes courtes (ex. « rapide », « végé », « poisson », « four », « enfants »).`
 
 export function buildPlanPrompt(preferences: Preferences, now = new Date()): string {
   const slots = planSlots(preferences)
@@ -70,12 +84,14 @@ ${slots.map(slot => `- ${slot.day} / ${slot.mealType} (${slotLabel(slot.day, slo
 ## Budget
 ${preferences.weeklyBudget} € pour l'ensemble des courses de ces repas, chez Lidl France.
 
+${BALANCED_DIET_RULES}
+
 ## Règles
 - Exactement un plat par créneau, dans l'ordre des créneaux ci-dessus.
 ${MEAL_IDEA_RULES}
-- Varie les protéines, les féculents et les cuisines ; jamais deux fois le même plat.
+- Varie les protéines, les féculents et les cuisines ; jamais deux fois le même plat. Si le régime le permet, prévois du poisson une à deux fois dans la semaine.
 - Nous sommes en ${MONTHS[now.getMonth()]} : privilégie les fruits et légumes de saison.
-- Mutualise les ingrédients d'un plat à l'autre (ex. un chou-fleur pour deux recettes, un pot de crème partagé) pour limiter le gaspillage et le coût.
+- Mutualise les ingrédients d'un plat à l'autre (ex. un chou-fleur pour deux recettes, un pot de fromage blanc partagé) pour limiter le gaspillage et le coût.
 - La somme des estimatedCost doit rester sous environ 85 % du budget, car on achète des conditionnements entiers.
 - summary : 1 à 2 phrases chaleureuses qui présentent la semaine.`
 }
@@ -105,27 +121,36 @@ Ne propose ni l'un de ces plats ni « ${input.replacing} », mais tu peux réuti
 ## Demande de l'utilisateur
 ${or(input.instruction, 'Juste une autre idée, dans le même esprit.')}
 
+${BALANCED_DIET_RULES}
+
 ## Règles
 ${MEAL_IDEA_RULES}
 - Budget indicatif pour ce plat : environ ${perMeal.toFixed(2)} €.`
 }
 
-export function buildRecipePrompt(preferences: Preferences, meal: MealIdea): string {
+export function buildRecipePrompt(preferences: Preferences, meal: RecipeMeal): string {
   const servings = servingsOf(preferences)
+  const plate = meal.plate
+    ? `\n- Assiette prévue : légumes (${meal.plate.vegetables}), protéines (${meal.plate.protein}), féculent (${meal.plate.starch})`
+    : ''
   return `Écris la recette de « ${meal.title} » (${slotLabel(meal.day, meal.mealType)}) pour ${servings} personne${servings > 1 ? 's' : ''}.
 
 ## Le plat
 - Description : ${meal.description}
 - Ingrédients principaux prévus : ${list(meal.keyIngredients, 'libre')}
-- Temps visé : ${meal.totalMinutes} min au total
+- Temps visé : ${meal.totalMinutes} min au total${plate}
 
 ## Foyer
 ${constraints(preferences)}
 
+${BALANCED_DIET_RULES}
+
 ## Règles
 - servings : ${servings}.
+- Quantités par adulte (les enfants mangent des portions plus petites) : au moins 200 g de légumes, 120 à 150 g de viande ou de poisson (ou 2 œufs, ou 60 g de légumineuses crues), 50 à 70 g de féculents crus.
+- kcalPerServing : estimation des calories d'une portion adulte (en général entre 400 et 600 kcal pour un plat de rééquilibrage).
 - ingredients : tous les ingrédients, y compris sel, poivre, huile et épices.
-  - name : nom du produit tel qu'on l'achète, au singulier, sans quantité ni préparation (ex. « oignon jaune », « crème fraîche épaisse », « blanc de poulet », « pâtes penne »). Écris toujours le même produit de la même façon.
+  - name : nom du produit tel qu'on l'achète, au singulier, sans quantité ni préparation (ex. « oignon jaune », « crème légère », « blanc de poulet », « riz complet »). Écris toujours le même produit de la même façon.
   - unit : « g » ou « ml » pour tout ce qui se pèse ou se mesure (pas de kg ni de litres) ; « pièce » pour les légumes, fruits et œufs comptés à l'unité ; « c. à soupe », « c. à café » ou « pincée » pour les petites quantités ; « gousse » pour l'ail ; « tranche », « botte », « boîte » ou « sachet » seulement si c'est la façon naturelle de compter.
   - quantity : la quantité pour ${servings} personne${servings > 1 ? 's' : ''}, dans cette unité.
   - aisle : le rayon Lidl du produit parmi ${AISLES.map(a => `« ${a.id} »`).join(', ')}.
@@ -152,9 +177,10 @@ export function buildShoppingListPrompt(preferences: Preferences, needs: Ingredi
 ${lines.join('\n')}
 
 ## Règles
-- Une ligne par produit à acheter. Regroupe les besoins qui correspondent au même produit en magasin (ex. « crème fraîche » et « crème fraîche épaisse », ou un même légume compté en pièces et en grammes).
+- Une ligne par produit à acheter. Regroupe les besoins qui correspondent au même produit en magasin (ex. « crème légère » et « crème fraîche légère », ou un même légume compté en pièces et en grammes).
+- Ces recettes suivent un rééquilibrage alimentaire : garde exactement les variantes demandées (allégées, complètes, maigres…), sans les remplacer par la version classique, et ne propose pas d'alternative moins chère qui sortirait de ce cadre.
 - name : nom court du produit (ex. « Oignons jaunes »).
-- product : le produit tel qu'on le trouve en rayon chez Lidl France, avec son conditionnement habituel (ex. « Filet d'oignons jaunes 1 kg », « Pâtes penne 500 g », « Crème fraîche épaisse 20 cl »). Cite une marque propre Lidl seulement si tu es sûr qu'elle correspond.
+- product : le produit tel qu'on le trouve en rayon chez Lidl France, avec son conditionnement habituel (ex. « Filet d'oignons jaunes 1 kg », « Riz complet 1 kg », « Crème légère 15 % 20 cl »). Cite une marque propre Lidl seulement si tu es sûr qu'elle correspond.
 - needed : la quantité nécessaire pour la semaine, lisible (ex. « 350 g », « 3 pièces »).
 - packages : le nombre entier de conditionnements à acheter pour couvrir le besoin (au moins 1).
 - unitPrice : le prix estimé d'un conditionnement, en euros, au prix Lidl France habituel.

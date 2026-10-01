@@ -50,6 +50,8 @@ const busy = computed(() => props.meal.swapping === true)
       </p>
     </div>
 
+    <PlateSummary v-if="meal.plate" :plate="meal.plate" class="rounded-md bg-elevated/50 p-2" />
+
     <div class="flex flex-wrap gap-1.5">
       <UBadge :label="`${meal.totalMinutes} min`" icon="i-lucide-clock" color="neutral" variant="outline" size="sm" />
       <UBadge v-for="tag in meal.tags" :key="tag" :label="tag" color="primary" variant="soft" size="sm" />
