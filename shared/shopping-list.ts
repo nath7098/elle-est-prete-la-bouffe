@@ -19,6 +19,19 @@ export interface AisleGroup<T extends ShoppingItem = ListItem> {
   items: T[]
 }
 
+/**
+ * Reste à acheter : un article non coché, ou un produit de placard coché
+ * (sur la page Courses, on coche les produits de placard à racheter).
+ */
+export function isToBuy(item: ListItem): boolean {
+  return item.pantryCheck ? item.checked : !item.checked
+}
+
+/** « Crème légère 15 % 20 cl x3 » */
+export function itemLabel(item: ShoppingItem): string {
+  return item.packages > 1 ? `${item.product} x${item.packages}` : item.product
+}
+
 export function itemTotal(item: ShoppingItem): number {
   return Math.max(item.packages, 0) * Math.max(item.unitPrice, 0)
 }
@@ -49,12 +62,9 @@ export function formatEuros(value: number): string {
 export function shoppingListToText(items: ListItem[], manualItems: ManualItem[], title: string): string {
   const lines: string[] = [title, '']
 
-  for (const group of groupByAisle(items.filter(item => !item.pantryCheck && !item.checked))) {
+  for (const group of groupByAisle(items.filter(isToBuy))) {
     lines.push(group.label.toUpperCase())
-    for (const item of group.items) {
-      const packages = item.packages > 1 ? ` x${item.packages}` : ''
-      lines.push(`- ${item.product}${packages}`)
-    }
+    for (const item of group.items) lines.push(`- ${itemLabel(item)}`)
     lines.push('')
   }
 
@@ -74,4 +84,19 @@ export function shoppingListToText(items: ListItem[], manualItems: ManualItem[],
 
   lines.push(`Total estimé : ${formatEuros(listTotal(items))}`)
   return lines.join('\n')
+}
+
+/** Une ligne par article à acheter, dans l'ordre des rayons : un rappel par ligne. */
+export function remindersLines(items: ListItem[], manualItems: ManualItem[]): string[] {
+  return [
+    ...groupByAisle(items.filter(isToBuy)).flatMap(group => group.items.map(itemLabel)),
+    ...manualItems.filter(item => !item.checked).map(item => item.name),
+  ]
+}
+
+/** Lien qui lance un raccourci de l'app Raccourcis (iPhone, iPad, Mac) avec du texte en entrée. */
+export function shortcutUrl(shortcutName: string, lines: string[]): string {
+  const name = encodeURIComponent(shortcutName)
+  const text = encodeURIComponent(lines.join('\n'))
+  return `shortcuts://run-shortcut?name=${name}&input=text&text=${text}`
 }

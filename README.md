@@ -16,6 +16,7 @@ Tous les plats sont pensés pour un **rééquilibrage alimentaire**.
   - classée par rayon, dans l'ordre d'un parcours type en magasin ;
   - les basiques (sel, huile…) et ce que tu as déjà sont mis à part, hors total ;
   - cases à cocher en magasin, ajouts perso, copier / partager en texte ;
+  - **envoi vers Rappels sur iPhone** (liste « Courses »), voir plus bas ;
   - signale quand le menu a changé et qu'il faut la mettre à jour.
 - Tout est enregistré **dans le navigateur** (pas de compte, pas de base de données).
 
@@ -23,7 +24,20 @@ Tous les plats sont pensés pour un **rééquilibrage alimentaire**.
 
 Pas possible pour l'instant : Lidl ne propose aucune API pour remplir la liste de courses de l'appli Lidl Plus, et aucun projet communautaire n'a documenté cette partie de l'appli. Le détail, et la marche à suivre pour l'ajouter un jour, sont dans [docs/LIDL_PLUS.md](docs/LIDL_PLUS.md).
 
-En attendant, la page **Courses** est pensée pour être utilisée directement en magasin sur ton téléphone.
+En attendant, la page **Courses** est pensée pour être utilisée directement en magasin sur ton téléphone, et la liste peut partir dans Rappels.
+
+## Envoyer la liste dans Rappels (iPhone)
+
+Sur iPhone, iPad ou Mac, la page **Courses** affiche un bouton **Rappels**. Rappels n'a pas d'API web : le bouton ouvre l'app **Raccourcis** avec la liste (`shortcuts://run-shortcut?name=…&input=text&text=…`), et un raccourci crée un rappel par article dans la liste « Courses ».
+
+Le raccourci se crée une seule fois (le guide s'affiche dans l'appli au premier envoi) :
+
+1. App **Raccourcis** → **+** → nommer le raccourci **Ajouter aux Courses** (nom modifiable dans le guide).
+2. Action **Séparer le texte** : texte = **Entrée du raccourci**, séparateur = **Nouvelles lignes**.
+3. Action **Répéter avec chaque élément**.
+4. Dans la boucle, action **Ajouter un nouveau rappel** : rappel = **Élément répété**, liste = **Courses**.
+
+Seul ce qui reste à acheter est envoyé, dans l'ordre des rayons : articles non cochés, produits de placard cochés « à racheter » et ajouts perso. Sans raccourci, le guide propose aussi de copier la liste (une ligne par article) : collée dans une liste Rappels sur iPhone, chaque ligne devient un rappel.
 
 ## Démarrer
 

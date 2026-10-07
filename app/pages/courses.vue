@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { formatEuros, groupByAisle, itemTotal, listTotal, shoppingListToText } from '#shared/shopping-list'
+import { formatEuros, groupByAisle, itemTotal, listTotal, remindersLines, shoppingListToText } from '#shared/shopping-list'
 
 const planner = usePlanner()
 const { plan, preferences, shoppingList, manualItems, generatingList, meals, readyCount, allRecipesReady, listOutdated } = planner
@@ -18,6 +18,9 @@ const toBuy = computed(() => [...items.value.filter(item => !item.pantryCheck), 
 const checkedCount = computed(() => toBuy.value.filter(item => item.checked).length)
 
 const canShare = import.meta.client && typeof navigator.share === 'function'
+// L'app Raccourcis, qui fait le lien avec Rappels, n'existe que sur iPhone, iPad et Mac.
+const hasShortcuts = import.meta.client && /iPhone|iPad|iPod|Macintosh/.test(navigator.userAgent)
+const reminders = computed(() => remindersLines(items.value, manualItems.value))
 
 function listText() {
   const date = new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })
@@ -61,6 +64,7 @@ function addItem() {
         </p>
       </div>
       <div v-if="shoppingList" class="flex shrink-0 flex-wrap gap-2">
+        <RemindersExport v-if="hasShortcuts" :lines="reminders" />
         <UButton icon="i-lucide-copy" label="Copier" color="neutral" variant="outline" @click="copy" />
         <UButton v-if="canShare" icon="i-lucide-share-2" label="Partager" color="neutral" variant="outline" @click="share" />
       </div>
@@ -234,7 +238,7 @@ function addItem() {
             color="neutral"
             variant="soft"
             title="Et l'appli Lidl Plus ?"
-            description="Lidl ne permet pas à une autre application de remplir la liste de courses de ton compte Lidl Plus : l'envoi direct n'est pas possible pour l'instant. Utilise cette page en magasin (elle reste enregistrée sur ton téléphone), ou copie et partage la liste."
+            description="Lidl ne permet pas à une autre application de remplir la liste de courses de ton compte Lidl Plus : l'envoi direct n'est pas possible pour l'instant. Utilise cette page en magasin (elle reste enregistrée sur ton téléphone), envoie la liste dans Rappels sur iPhone, ou copie-la et partage-la."
           />
         </div>
       </div>
